@@ -3,7 +3,7 @@ using System.Collections;
 
 public class Pickup : MonoBehaviour {
 
-
+	int score;
 
 	// Use this for initialization
 	void Start () {
