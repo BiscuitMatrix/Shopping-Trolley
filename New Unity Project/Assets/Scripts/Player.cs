@@ -7,7 +7,7 @@ public class Player : MonoBehaviour
 	bool thrusting;
 	Vector2 thrustDir;
 	float thrustForce = 50.0f;
-	float kbRotateSp = 3;
+	float kbRotateSp = Mathf.Deg2Rad * 150.0f;
 	Rigidbody2D thisRB;
 	bool controlEnabled;
 	const float fixedBounceAngle = Mathf.Deg2Rad * 30.0f;
@@ -15,7 +15,13 @@ public class Player : MonoBehaviour
 	float limitVectorX;
 	float limitVectorY;
 	float crashStunLeft;
-	float crashStunTotal = 0.25f;
+	const float crashStunTotal = 0.25f;
+	float skidAngle;
+	const float maxSkidAngle = Mathf.Deg2Rad * 75.0f;
+	float skidTimeLeft;
+	const float skidTimeMax = 1.0f;
+
+	public int score;
 
 	// Use this for initialization
 	void Start () 
@@ -33,6 +39,8 @@ public class Player : MonoBehaviour
 		}
 		controlEnabled = true;
 		crashStunLeft = 0.0f;
+		skidAngle = 0.0f;
+		skidTimeLeft = 0.0f;
 	}
 	
 	// Update is called once per frame
@@ -72,6 +80,9 @@ public class Player : MonoBehaviour
 				angleInput = kbRotateSp * Time.deltaTime;
 			}
 
+			// Add any involuntry input.
+			angleInput += skidAngle * Time.deltaTime;
+
 			// Append the direction of thrust.
 			if (angleInput != 0)
 			{
@@ -80,6 +91,16 @@ public class Player : MonoBehaviour
 				newDir.x = Mathf.Cos (angleInput) * thrustDir.x + Mathf.Sin (angleInput) * thrustDir.y;
 				newDir.y = -Mathf.Sin (angleInput) * thrustDir.x + Mathf.Cos (angleInput) * thrustDir.y;
 				thrustDir = newDir;
+			}
+		}
+
+		// Decrease anytime on involuntry turning.
+		if (skidTimeLeft > 0)
+		{
+			skidTimeLeft -= Time.deltaTime;
+			if (skidTimeLeft < 0)
+			{
+				StopSkid ();
 			}
 		}
 
@@ -138,7 +159,17 @@ public class Player : MonoBehaviour
 
 	void OnTriggerEnter2D(Collider2D other)
 	{
+		Pickup pick = other.gameObject.GetComponent<Pickup> ();
 
+		if (pick != null)
+		{
+			// Do stuff
+		} 
+
+		if (other.gameObject.layer == (LayerMask.NameToLayer("Spill")))
+		{
+			StartSkid();
+		}
 	}
 
 	public void DisableThrust()
@@ -148,5 +179,17 @@ public class Player : MonoBehaviour
 
 		// The camera should be the only chidren. Change this if that's not the case anymore.
 		transform.DetachChildren ();
+	}
+
+	void StopSkid()
+	{
+		skidAngle = 0;
+	}
+
+	void StartSkid()
+	{
+		int dir = Random.Range (0, 2) * 2 - 1;
+		skidAngle = maxSkidAngle * dir;
+		skidTimeLeft = skidTimeMax;
 	}
 }
